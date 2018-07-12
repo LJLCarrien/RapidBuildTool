@@ -36,6 +36,23 @@ public class RapidBuildEditorTool : EditorWindow
                     DrawButton("获取所有Sprite", GetSprites, 100);
                     DrawButton("获取所有Texture", GetTextures, 100);
                 });
+                DrawHorizontal(() =>
+                {
+                    foreach (var itemLbl in childLblList)
+                    {
+                        if (componnent2ToggoleDic.ContainsKey(itemLbl))
+                        {
+                            DrawToggleGroup(itemLbl, componnent2ToggoleDic[itemLbl]);
+                        }
+                        else
+                        {
+                            
+                            DrawToggleGroup(itemLbl, itemLbl.gameObject.activeSelf);
+
+                        }
+                    }
+                });
+
             }
         }, "Box");
     }
@@ -170,6 +187,14 @@ public class RapidBuildEditorTool : EditorWindow
             cAction();
             EditorGUILayout.EndHorizontal();
         }
+    }
+
+    Dictionary<UIWidget, bool> componnent2ToggoleDic = new Dictionary<UIWidget, bool>();
+    void DrawToggleGroup(UIWidget widget, bool toggle)
+    {
+        var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
+        componnent2ToggoleDic.Add(widget, bIsToggle);
+        //widget.gameObject.SetActive(toggle);
     }
     #endregion
 
