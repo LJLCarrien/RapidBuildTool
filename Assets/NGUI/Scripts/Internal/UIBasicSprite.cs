@@ -40,6 +40,7 @@ public abstract class UIBasicSprite : UIWidget
 		Both,
 	}
 
+	[HideInInspector][SerializeField] protected bool mIsGrey = false;
 	[HideInInspector][SerializeField] protected Type mType = Type.Simple;
 	[HideInInspector][SerializeField] protected FillDirection mFillDirection = FillDirection.Radial360;
 	[Range(0f, 1f)]
@@ -235,11 +236,26 @@ public abstract class UIBasicSprite : UIWidget
 		}
 	}
 
-	/// <summary>
-	/// Whether the sprite's material is using a pre-multiplied alpha shader.
-	/// </summary>
+    public bool isGrey
+    {
+        get
+        {
+            return mIsGrey;
+        }
+        set
+        {
+            if (mIsGrey != value)
+            {
+                mIsGrey = value;
+                mChanged = true;
+            }
+        }
+    }
+    /// <summary>
+    /// Whether the sprite's material is using a pre-multiplied alpha shader.
+    /// </summary>
 
-	public virtual bool premultipliedAlpha { get { return false; } }
+    public virtual bool premultipliedAlpha { get { return false; } }
 
 	/// <summary>
 	/// Size of the pixel. Overwritten in the NGUI sprite to pull a value from the atlas.
@@ -292,7 +308,10 @@ public abstract class UIBasicSprite : UIWidget
 		get
 		{
 			Color colF = color;
-			colF.a = finalAlpha;
+            if(isGrey)
+                colF=new Color(0f,1f,1f,1f);
+
+            colF.a = finalAlpha;
 			if (premultipliedAlpha) colF = NGUITools.ApplyPMA(colF);
 			return colF;
 		}

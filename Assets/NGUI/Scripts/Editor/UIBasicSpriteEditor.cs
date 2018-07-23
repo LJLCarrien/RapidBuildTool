@@ -20,9 +20,9 @@ public class UIBasicSpriteEditor : UIWidgetInspector
 
 	protected override void DrawCustomProperties ()
 	{
-		GUILayout.Space(6f);
-
-		SerializedProperty sp = NGUIEditorTools.DrawProperty("Type", serializedObject, "mType", GUILayout.MinWidth(20f));
+        NGUIEditorTools.DrawProperty("IsGrey", serializedObject, "mIsGrey", GUILayout.MinWidth(20f));
+        GUILayout.Space(6f);
+        SerializedProperty sp = NGUIEditorTools.DrawProperty("Type", serializedObject, "mType", GUILayout.MinWidth(20f));
 
 		UISprite.Type type = (UISprite.Type)sp.intValue;
 

@@ -45,6 +45,7 @@ Shader "Unlit/Transparent Colored"
 				float4 vertex : SV_POSITION;
 				half2 texcoord : TEXCOORD0;
 				fixed4 color : COLOR;
+				fixed grey : TEXCOORD1;
 			};
 	
 			v2f o;
@@ -54,12 +55,16 @@ Shader "Unlit/Transparent Colored"
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.texcoord = v.texcoord;
 				o.color = v.color;
+				o.grey = v.color.r;
 				return o;
 			}
 				
 			fixed4 frag (v2f IN) : SV_Target
 			{
-				return tex2D(_MainTex, IN.texcoord) * IN.color;
+				fixed4 col = tex2D(_MainTex, IN.texcoord) * IN.color;
+				if (IN.grey == 0)
+					col.rgb = dot(col.rgb,fixed3(0.222,0.707,0.071));
+				return col;
 			}
 			ENDCG
 		}
