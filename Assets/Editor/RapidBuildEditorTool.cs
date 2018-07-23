@@ -16,6 +16,7 @@ public class RapidBuildEditorTool : EditorWindow
 
     private GameObject mTarget;
     private bool lblFoldout;
+    private UIAtlas comAtlas;
     void OnGUI()
     {
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
@@ -24,7 +25,8 @@ public class RapidBuildEditorTool : EditorWindow
             DrawButton("创建按钮", CreateButton, 100);
             isNeedScale = GUILayout.Toggle(isNeedScale, "点击需要缩放效果");
         }, "Box");
-
+        //常用图集
+        ShowComAtlas();
         EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
         DrawVertical(() =>
         {
@@ -51,27 +53,14 @@ public class RapidBuildEditorTool : EditorWindow
                 });
 
                 //labels
-                if (childLblList != null && childLblList.Count != 0)
-                {
-                    lblFoldout = EditorGUILayout.Foldout(lblFoldout, "Labels");
-                    if (lblFoldout)
-                    {
-                        DrawVertical(() =>
-                        {
-                            foreach (var itemLbl in childLblList)
-                            {
-                                DrawToggleItem(itemLbl, itemLbl.gameObject.activeSelf);
-                            }
-                        }, "Box");
-                    }
-                }
+                ShowLabels();
             }
         }, "Box");
+
     }
 
 
-    #region 功能
-
+    #region 创建
     /// <summary>
     /// 创建按钮
     /// </summary>
@@ -122,6 +111,70 @@ public class RapidBuildEditorTool : EditorWindow
         }
 
     }
+    #endregion
+    #region 保存
+    [SerializeField]//必须要加
+    protected List<UIAtlas> AtlasList = new List<UIAtlas>();
+
+    //序列化对象
+    protected SerializedObject _serializedObject;
+
+    //序列化属性
+    protected SerializedProperty _assetLstProperty;
+
+    protected void OnEnable()
+    {
+        //使用当前类初始化
+        _serializedObject = new SerializedObject(this);
+        //获取当前类中可序列话的属性
+        _assetLstProperty = _serializedObject.FindProperty("AtlasList");
+    }
+
+
+    private bool commonAtlasFoldout;
+    //private List<UIAtlas> commonAtlasList;
+    //private int totalAtlasNum = 3;
+
+    private void ShowComAtlas()
+    {
+        //commonAtlasList = new List<UIAtlas>(totalAtlasNum);
+
+        //commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "Atlas");
+        //if (commonAtlasFoldout)
+        //{
+        //    DrawVertical(() =>
+        //    {
+        //        for (int i = commonAtlasList.Count; i < totalAtlasNum; i++)
+        //        {
+        //            var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasList[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+        //            commonAtlasList.Add(atlasitem);
+        //        }
+        //    }, "Box");
+        //}
+        //更新
+        _serializedObject.Update();
+
+        //开始检查是否有修改
+        EditorGUI.BeginChangeCheck();
+
+        //显示属性
+        //第二个参数必须为true，否则无法显示子节点即List内容
+        EditorGUILayout.PropertyField(_assetLstProperty, true);
+
+        //结束检查是否有修改
+        if (EditorGUI.EndChangeCheck())
+        {
+            //提交修改
+            _serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    //private void AddComAtlas()
+    //{
+    //    totalAtlasNum++;
+    //}
+    #endregion
+    #region 修改
     /// <summary>
     /// 是否需要提供修改名字
     /// </summary>
@@ -135,6 +188,7 @@ public class RapidBuildEditorTool : EditorWindow
     /// </summary>
     private bool isOnlyShowDepthBelowTen;
 
+    #region Labels
     private readonly int LabelDefaultDepth = 10;
     private List<UILabel> childLblList;
     /// <summary>
@@ -166,7 +220,28 @@ public class RapidBuildEditorTool : EditorWindow
 
         Debug.LogError(childLblList.Count);
     }
-
+    /// <summary>
+    /// 显示带Label组件的子物体
+    /// </summary>
+    private void ShowLabels()
+    {
+        if (childLblList != null && childLblList.Count != 0)
+        {
+            lblFoldout = EditorGUILayout.Foldout(lblFoldout, "Labels");
+            if (lblFoldout)
+            {
+                DrawVertical(() =>
+                {
+                    foreach (var itemLbl in childLblList)
+                    {
+                        DrawToggleItem(itemLbl, itemLbl.gameObject.activeSelf);
+                    }
+                }, "Box");
+            }
+        }
+    }
+    #endregion
+    #region Sprites
     private List<UISprite> childSpList;
     private void GetSprites()
     {
@@ -176,7 +251,8 @@ public class RapidBuildEditorTool : EditorWindow
             childSpList.AddRange(tmpList);
         Debug.LogError(childSpList.Count);
     }
-
+    #endregion
+    #region Textures
     private List<UITexture> childTxList;
     private void GetTextures()
     {
@@ -186,7 +262,8 @@ public class RapidBuildEditorTool : EditorWindow
             childTxList.AddRange(tmpList);
         Debug.LogError(childTxList.Count);
     }
-
+    #endregion
+    #region 功能辅助
     private List<T> GetChildsWithThis<T>() where T : UIWidget
     {
         List<T> chilTList = new List<T>();
@@ -201,7 +278,8 @@ public class RapidBuildEditorTool : EditorWindow
         if (chilTList.Count > 0) return chilTList;
         else return null;
     }
-
+    #endregion
+    #region 其他功能
     private StringBuilder resultStringBuilder;
     private readonly Vector3 needResetToThisScale = Vector3.one;
     /// <summary>
@@ -224,6 +302,7 @@ public class RapidBuildEditorTool : EditorWindow
             }
         }
     }
+    #endregion
     #endregion
 
     #region 辅助
@@ -302,4 +381,14 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
 
+    protected virtual Rect BeginVertical(params GUILayoutOption[] options)
+    {
+        return EditorGUILayout.BeginVertical("ProgressBarBack", options);
+    }
+
+    protected virtual Rect BeginVertical(string style = "", params GUILayoutOption[] options)
+    {
+        return EditorGUILayout.BeginVertical(style, options);
+    }
 }
+
