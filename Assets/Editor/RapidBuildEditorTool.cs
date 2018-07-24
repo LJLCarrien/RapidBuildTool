@@ -16,7 +16,9 @@ public class RapidBuildEditorTool : EditorWindow
 
     private GameObject mTarget;
     private bool lblFoldout;
-    private UIAtlas comAtlas;
+    private bool SpriteFoldout;
+    //选中图集下标
+    private int UseChoiceAtlasIndex;
     void OnGUI()
     {
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
@@ -54,6 +56,8 @@ public class RapidBuildEditorTool : EditorWindow
 
                 //labels
                 ShowLabels();
+                //Sprites
+                ShowSprites();
             }
         }, "Box");
 
@@ -113,59 +117,42 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
     #region 保存
-    [SerializeField]//必须要加
-    protected List<UIAtlas> AtlasList = new List<UIAtlas>();
-
-    //序列化对象
-    protected SerializedObject _serializedObject;
-
-    //序列化属性
-    protected SerializedProperty _assetLstProperty;
-
-    protected void OnEnable()
-    {
-        //使用当前类初始化
-        _serializedObject = new SerializedObject(this);
-        //获取当前类中可序列话的属性
-        _assetLstProperty = _serializedObject.FindProperty("AtlasList");
-    }
-
-
     private bool commonAtlasFoldout;
-    //private List<UIAtlas> commonAtlasList;
-    //private int totalAtlasNum = 3;
+    private Dictionary<int,UIAtlas> commonAtlasDic = new Dictionary<int, UIAtlas>();
+    private Dictionary<int, bool> commonAtlasToogleDic = new Dictionary<int, bool>();
+    private int totalAtlasNum = 0;
 
     private void ShowComAtlas()
     {
-        //commonAtlasList = new List<UIAtlas>(totalAtlasNum);
-
-        //commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "Atlas");
-        //if (commonAtlasFoldout)
-        //{
-        //    DrawVertical(() =>
-        //    {
-        //        for (int i = commonAtlasList.Count; i < totalAtlasNum; i++)
-        //        {
-        //            var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasList[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-        //            commonAtlasList.Add(atlasitem);
-        //        }
-        //    }, "Box");
-        //}
-        //更新
-        _serializedObject.Update();
-
-        //开始检查是否有修改
-        EditorGUI.BeginChangeCheck();
-
-        //显示属性
-        //第二个参数必须为true，否则无法显示子节点即List内容
-        EditorGUILayout.PropertyField(_assetLstProperty, true);
-
-        //结束检查是否有修改
-        if (EditorGUI.EndChangeCheck())
+        DrawHorizontal(() =>
         {
-            //提交修改
-            _serializedObject.ApplyModifiedProperties();
+            commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "Atlas");
+            EditorGUILayout.LabelField("Size:", GUILayout.Width(92));
+            totalAtlasNum = EditorGUILayout.IntField(totalAtlasNum);
+        });
+        commonAtlasFoldout = totalAtlasNum > 0;
+        if (commonAtlasFoldout)
+        {
+            DrawVertical(() =>
+            {
+                for (int i = 0; i < totalAtlasNum; i++)
+                {
+                    var bIsToggle = EditorGUILayout.BeginToggleGroup(i.ToString(), commonAtlasToogleDic.Count > i && commonAtlasToogleDic[i]);
+                    var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasDic.Count <= i ? null : commonAtlasDic[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+                    
+                    if (!commonAtlasDic.ContainsKey(i))
+                    {
+                        commonAtlasDic.Add(i,atlasitem);
+                        commonAtlasToogleDic.Add(i, false);
+                    }
+                    else
+                    {
+                        commonAtlasDic[i] = atlasitem;
+                        commonAtlasToogleDic[i] = bIsToggle;
+                    }
+                    EditorGUILayout.EndToggleGroup();
+                }
+            });
         }
     }
 
@@ -234,7 +221,7 @@ public class RapidBuildEditorTool : EditorWindow
                 {
                     foreach (var itemLbl in childLblList)
                     {
-                        DrawToggleItem(itemLbl, itemLbl.gameObject.activeSelf);
+                        DrawToggleLabelItem(itemLbl, itemLbl.gameObject.activeSelf);
                     }
                 }, "Box");
             }
@@ -250,6 +237,25 @@ public class RapidBuildEditorTool : EditorWindow
         if (tmpList != null)
             childSpList.AddRange(tmpList);
         Debug.LogError(childSpList.Count);
+    }
+
+    private void ShowSprites()
+    {
+        if (childSpList != null && childSpList.Count != 0)
+        {
+            SpriteFoldout = EditorGUILayout.Foldout(SpriteFoldout, "Sprites");
+            if (SpriteFoldout)
+            {
+                DrawVertical(() =>
+                {
+                    foreach (var item in childSpList)
+                    {
+                        DrawToggleSpriteItem(item, item.gameObject.activeSelf);
+                    }
+                }, "Box");
+            }
+        }
+
     }
     #endregion
     #region Textures
@@ -324,6 +330,15 @@ public class RapidBuildEditorTool : EditorWindow
             EditorGUILayout.EndVertical();
         }
     }
+    void DrawVertical(Action cAction, params GUILayoutOption[] cOptions)
+    {
+        if (cAction != null)
+        {
+            EditorGUILayout.BeginVertical(cOptions);
+            cAction();
+            EditorGUILayout.EndVertical();
+        }
+    }
     void DrawHorizontal(Action cAction, params GUILayoutOption[] cOptions)
     {
         if (cAction != null)
@@ -339,11 +354,11 @@ public class RapidBuildEditorTool : EditorWindow
     //原始位置字典
     Dictionary<UIWidget, Vector2> originalTsDic = new Dictionary<UIWidget, Vector2>();
     /// <summary>
-    /// 绘单个Item
+    /// 绘单个LabelItem
     /// </summary>
     /// <param name="widget"></param>
     /// <param name="toggle"></param>
-    void DrawToggleItem(UIWidget widget, bool toggle)
+    void DrawToggleLabelItem(UIWidget widget, bool toggle)
     {
         var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
         widget.gameObject.SetActive(bIsToggle);
@@ -378,6 +393,20 @@ public class RapidBuildEditorTool : EditorWindow
             }
         });
         EditorGUILayout.EndToggleGroup();
+    }
+
+    void DrawToggleSpriteItem(UISprite sprite, bool toggle)
+    {
+        var bIsToggle = EditorGUILayout.BeginToggleGroup(sprite.name, toggle);
+        sprite.gameObject.SetActive(bIsToggle);
+        var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+        DrawButton("使用图集", () =>
+        {
+            //usingAtlas = totalAtlasNum[UseChoiceAtlasIndex];
+
+        }, 50, 20);
+        EditorGUILayout.EndToggleGroup();
+
     }
     #endregion
 
