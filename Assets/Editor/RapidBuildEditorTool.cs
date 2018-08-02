@@ -7,13 +7,17 @@ using UnityEditor;
 
 public class RapidBuildEditorTool : EditorWindow
 {
+    private static RapidBuildEditorTool cWin;
+
     [MenuItem("Tools/拼UI神器 &#Q")]
     static void ShowWindow()
     {
-        var cWin = CreateInstance<RapidBuildEditorTool>();
+        cWin = CreateInstance<RapidBuildEditorTool>();
         cWin.Show();
     }
-
+    /// <summary>
+    /// 修改对象
+    /// </summary>
     private GameObject mTarget;
     private bool lblFoldout;
     private bool SpriteFoldout;
@@ -24,16 +28,26 @@ public class RapidBuildEditorTool : EditorWindow
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
         DrawVertical(() =>
         {
-            DrawButton("创建按钮", CreateButton, 100);
+            DrawButton("创建按钮", CreateButton);
             isNeedScale = GUILayout.Toggle(isNeedScale, "点击需要缩放效果");
         }, "Box");
+
         //常用图集
         ShowComAtlas();
+        if (totalAtlasNum > 0)
+            DrawHorizontal(() =>
+            {
+                DrawButton(allSelectState ? "取消全选" : "全部选中", CancleAllAtlasSelect);
+                DrawButton("选中&&最后的", UseLastSelectAltas);
+            });
+
         EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
         DrawVertical(() =>
         {
             if (mTarget == null) mTarget = Selection.activeGameObject;
             mTarget = EditorGUILayout.ObjectField("修改对象：", mTarget, typeof(GameObject), true, GUILayout.ExpandWidth(true)) as GameObject;
+            DrawButton("保存修改", ApplyChangeAndSave);
+
             if (mTarget != null)
             {
                 DrawHorizontal(() =>
@@ -43,15 +57,15 @@ public class RapidBuildEditorTool : EditorWindow
                 });
                 isOnlyShowDepthBelowTen = GUILayout.Toggle(isOnlyShowDepthBelowTen, "只显示层级低于10");
 
-                DrawButton("一键修正缩放", OneKeyResetScale, 100);
+                DrawButton("一键修正缩放", OneKeyResetScale);
                 if (resultStringBuilder != null && resultStringBuilder.Length > 0)
                     GUILayout.TextArea(resultStringBuilder.ToString());
 
                 DrawHorizontal(() =>
                 {
-                    DrawButton("获取Label", GetLabels, 100);
-                    DrawButton("获取所有Sprite", GetSprites, 100);
-                    DrawButton("获取所有Texture", GetTextures, 100);
+                    DrawButton("获取Label", GetLabels);
+                    DrawButton("获取所有Sprite", GetSprites);
+                    DrawButton("获取所有Texture", GetTextures);
                 });
 
                 //labels
@@ -116,50 +130,69 @@ public class RapidBuildEditorTool : EditorWindow
 
     }
     #endregion
-    #region 保存
+    #region 常用图集
     private bool commonAtlasFoldout;
-    private Dictionary<int,UIAtlas> commonAtlasDic = new Dictionary<int, UIAtlas>();
+    private Dictionary<int, UIAtlas> commonAtlasDic = new Dictionary<int, UIAtlas>();
     private Dictionary<int, bool> commonAtlasToogleDic = new Dictionary<int, bool>();
     private int totalAtlasNum = 0;
-
+    private UIAtlas selectAtlas;
     private void ShowComAtlas()
     {
         DrawHorizontal(() =>
         {
-            commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "Atlas");
-            EditorGUILayout.LabelField("Size:", GUILayout.Width(92));
+            commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "常用图集：");
+            EditorGUILayout.LabelField("Size:", GUILayout.Width(90));
             totalAtlasNum = EditorGUILayout.IntField(totalAtlasNum);
         });
+
         commonAtlasFoldout = totalAtlasNum > 0;
+
         if (commonAtlasFoldout)
         {
             DrawVertical(() =>
             {
                 for (int i = 0; i < totalAtlasNum; i++)
                 {
-                    var bIsToggle = EditorGUILayout.BeginToggleGroup(i.ToString(), commonAtlasToogleDic.Count > i && commonAtlasToogleDic[i]);
+                    //var bIsToggle = GUILayout.Toggle(commonAtlasToogleDic.Count > i && commonAtlasToogleDic[i], i.ToString(), EditorStyles.radioButton);
+
+                    var bIsToggle = EditorGUILayout.BeginToggleGroup(i.ToString(), i >= commonAtlasToogleDic.Count || commonAtlasToogleDic[i]);
+
                     var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasDic.Count <= i ? null : commonAtlasDic[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-                    
+
                     if (!commonAtlasDic.ContainsKey(i))
                     {
-                        commonAtlasDic.Add(i,atlasitem);
-                        commonAtlasToogleDic.Add(i, false);
+                        commonAtlasDic.Add(i, atlasitem);
+                        commonAtlasToogleDic.Add(i, true);
                     }
                     else
                     {
                         commonAtlasDic[i] = atlasitem;
                         commonAtlasToogleDic[i] = bIsToggle;
                     }
+                    if (bIsToggle)
+                        selectAtlas = atlasitem;
                     EditorGUILayout.EndToggleGroup();
                 }
             });
         }
     }
 
-    //private void AddComAtlas()
-    //{
-    //    totalAtlasNum++;
-    //}
+    private void UseLastSelectAltas()
+    {
+        if (selectAtlas == null) return;
+        Debug.LogError(selectAtlas.name);
+    }
+
+    private bool allSelectState = true;
+    private void CancleAllAtlasSelect()
+    {
+        allSelectState = !allSelectState;
+        for (int i = 0; i < commonAtlasToogleDic.Count; i++)
+        {
+            commonAtlasToogleDic[i] = allSelectState;
+        }
+    }
+
     #endregion
     #region 修改
     /// <summary>
@@ -312,7 +345,7 @@ public class RapidBuildEditorTool : EditorWindow
     #endregion
 
     #region 辅助
-    void DrawButton(string cName, Action cClickAction, int cWidth, int cHeight = 50)
+    void DrawButton(string cName, Action cClickAction, int cWidth = 100, int cHeight = 50)
     {
         if (GUILayout.Button(cName, GUILayout.Width(cWidth), GUILayout.Height(cHeight)))
         {
@@ -402,7 +435,7 @@ public class RapidBuildEditorTool : EditorWindow
         var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
         DrawButton("使用图集", () =>
         {
-            //usingAtlas = totalAtlasNum[UseChoiceAtlasIndex];
+            sprite.atlas = selectAtlas;
 
         }, 50, 20);
         EditorGUILayout.EndToggleGroup();
@@ -410,14 +443,65 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
 
-    protected virtual Rect BeginVertical(params GUILayoutOption[] options)
-    {
-        return EditorGUILayout.BeginVertical("ProgressBarBack", options);
-    }
+    #region 保存预设
+    //[InitializeOnLoadMethod]
+    //static void StartInitializeOnLoadMethod()
+    //{
+    //if (cWin == null) PrefabUtility.prefabInstanceUpdated = null;
+    //PrefabUtility.prefabInstanceUpdated = delegate (GameObject instance)
+    //{
+    //        //prefab保存的路径
+    //        Debug.Log(AssetDatabase.GetAssetPath(PrefabUtility.GetPrefabParent(instance)));
+    //};
+    //}
 
-    protected virtual Rect BeginVertical(string style = "", params GUILayoutOption[] options)
+    //参考自http://www.hiwrz.com/2016/06/06/unity/216/
+    /// <summary>
+    /// 应用预设且保存unity
+    /// </summary>
+    private void ApplyChangeAndSave()
     {
-        return EditorGUILayout.BeginVertical(style, options);
+        if (mTarget == null) return;
+        PrefabType pType = PrefabUtility.GetPrefabType(mTarget);
+        if (pType != PrefabType.PrefabInstance) return;
+        GameObject prefabGo = GetPrefabInstanceParent(mTarget);
+        UnityEngine.Object prefabAsset = null;
+        if (prefabGo != null)
+        {
+            prefabAsset = PrefabUtility.GetPrefabParent(prefabGo);
+            if (prefabAsset != null)
+                PrefabUtility.ReplacePrefab(prefabGo, prefabAsset, ReplacePrefabOptions.ConnectToPrefab);
+        }
+        AssetDatabase.SaveAssets();
     }
+    /// <summary>
+    /// 遍历获取prefab节点所在的根prefab节点
+    /// </summary>
+    static GameObject GetPrefabInstanceParent(GameObject go)
+    {
+        if (go == null)
+        {
+            return null;
+        }
+        PrefabType pType = EditorUtility.GetPrefabType(go);
+        if (pType != PrefabType.PrefabInstance)
+        {
+            return null;
+        }
+        if (go.transform.parent == null)
+        {
+            return go;
+        }
+        pType = EditorUtility.GetPrefabType(go.transform.parent.gameObject);
+        if (pType != PrefabType.PrefabInstance)
+        {
+            return go;
+        }
+        return GetPrefabInstanceParent(go.transform.parent.gameObject);
+    }
+    #endregion
+    #region 保存常用图集配置
+
+    #endregion
 }
 
