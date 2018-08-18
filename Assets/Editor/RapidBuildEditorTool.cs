@@ -35,11 +35,11 @@ public class RapidBuildEditorTool : EditorWindow
         //常用图集
         ShowComAtlas();
         if (totalAtlasNum > 0)
-            DrawHorizontal(() =>
-            {
-                DrawButton(allSelectState ? "取消全选" : "全部选中", CancleAllAtlasSelect);
-                DrawButton("选中&&最后的", UseLastSelectAltas);
-            });
+            //DrawHorizontal(() =>
+            //{
+            //    DrawButton(allSelectState ? "取消全选" : "全部选中", CancleAllAtlasSelect);
+            //    DrawButton("选中&&最后的", UseLastSelectAltas);
+            //});
 
         EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
         DrawVertical(() =>
@@ -133,7 +133,6 @@ public class RapidBuildEditorTool : EditorWindow
     #region 常用图集
     private bool commonAtlasFoldout;
     private Dictionary<int, UIAtlas> commonAtlasDic = new Dictionary<int, UIAtlas>();
-    private Dictionary<int, bool> commonAtlasToogleDic = new Dictionary<int, bool>();
     private int totalAtlasNum = 0;
     private UIAtlas selectAtlas;
     private void ShowComAtlas()
@@ -153,46 +152,18 @@ public class RapidBuildEditorTool : EditorWindow
             {
                 for (int i = 0; i < totalAtlasNum; i++)
                 {
-                    //var bIsToggle = GUILayout.Toggle(commonAtlasToogleDic.Count > i && commonAtlasToogleDic[i], i.ToString(), EditorStyles.radioButton);
-
-                    var bIsToggle = EditorGUILayout.BeginToggleGroup(i.ToString(), i >= commonAtlasToogleDic.Count || commonAtlasToogleDic[i]);
-
                     var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasDic.Count <= i ? null : commonAtlasDic[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
 
-                    if (!commonAtlasDic.ContainsKey(i))
-                    {
-                        commonAtlasDic.Add(i, atlasitem);
-                        commonAtlasToogleDic.Add(i, true);
-                    }
-                    else
-                    {
-                        commonAtlasDic[i] = atlasitem;
-                        commonAtlasToogleDic[i] = bIsToggle;
-                    }
-                    if (bIsToggle)
-                        selectAtlas = atlasitem;
-                    EditorGUILayout.EndToggleGroup();
                 }
             });
         }
     }
 
-    private void UseLastSelectAltas()
+    private string alwaysUseAtlasPathStr;
+    private void InitAlwaysUseAtlas()
     {
-        if (selectAtlas == null) return;
-        Debug.LogError(selectAtlas.name);
+         //=AssetDatabase.LoadMainAssetAtPath("Assets/NGUI/Examples/Atlases/Fantasy/Fantasy Atlas.prefab") as GameObject;
     }
-
-    private bool allSelectState = true;
-    private void CancleAllAtlasSelect()
-    {
-        allSelectState = !allSelectState;
-        for (int i = 0; i < commonAtlasToogleDic.Count; i++)
-        {
-            commonAtlasToogleDic[i] = allSelectState;
-        }
-    }
-
     #endregion
     #region 修改
     /// <summary>
