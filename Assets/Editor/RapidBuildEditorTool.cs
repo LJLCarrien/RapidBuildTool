@@ -14,6 +14,16 @@ public class RapidBuildEditorTool : EditorWindow
     {
         cWin = CreateInstance<RapidBuildEditorTool>();
         cWin.Show();
+        cWin.Init();
+    }
+
+    private void Init()
+    {
+        InitAlwaysUseAtlas();
+    }
+    void OnDestroy()
+    {
+        SaveAltasSetting();
     }
     /// <summary>
     /// 修改对象
@@ -41,7 +51,7 @@ public class RapidBuildEditorTool : EditorWindow
             //    DrawButton("选中&&最后的", UseLastSelectAltas);
             //});
 
-        EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
+            EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
         DrawVertical(() =>
         {
             if (mTarget == null) mTarget = Selection.activeGameObject;
@@ -132,7 +142,7 @@ public class RapidBuildEditorTool : EditorWindow
     #endregion
     #region 常用图集
     private bool commonAtlasFoldout;
-    private Dictionary<int, UIAtlas> commonAtlasDic = new Dictionary<int, UIAtlas>();
+    private List<UIAtlas> commonAtlasList = new List<UIAtlas>();
     private int totalAtlasNum = 0;
     private UIAtlas selectAtlas;
     private void ShowComAtlas()
@@ -152,18 +162,49 @@ public class RapidBuildEditorTool : EditorWindow
             {
                 for (int i = 0; i < totalAtlasNum; i++)
                 {
-                    var atlasitem = EditorGUILayout.ObjectField("常用：" + i, commonAtlasDic.Count <= i ? null : commonAtlasDic[i], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-
+                    DrawAtlasItem(i);
                 }
             });
         }
     }
 
-    private string alwaysUseAtlasPathStr;
+    /// <summary>
+    /// 初始化显示常用图集
+    /// </summary>
     private void InitAlwaysUseAtlas()
     {
-         //=AssetDatabase.LoadMainAssetAtPath("Assets/NGUI/Examples/Atlases/Fantasy/Fantasy Atlas.prefab") as GameObject;
+        var allAtlasStr = EditorPrefs.GetString(GetType().Name + "commonAtlasDicValue");
+        var itemAtlasArr = allAtlasStr.Split(',');
+        for (int i = 0; i < itemAtlasArr.Length; i++)
+        {
+            var atlasGo = AssetDatabase.LoadMainAssetAtPath(itemAtlasArr[i]) as GameObject;
+            if (atlasGo != null)
+            {
+                var atlas = atlasGo.GetComponent<UIAtlas>();
+                if (atlas != null) commonAtlasList.Add(atlas);
+            }
+        }
+        totalAtlasNum = commonAtlasList.Count;
     }
+    #region 保存常用图集配置
+    private void SaveAltasSetting()
+    {
+        List<string> atlasList = new List<string>(commonAtlasList.Count);
+        string itemAtlasPath;
+        foreach (var item in commonAtlasList)
+        {
+            itemAtlasPath = AssetDatabase.GetAssetPath(item);
+            if (!string.IsNullOrEmpty(itemAtlasPath))
+                atlasList.Add(itemAtlasPath);
+        }
+
+        var atlasArr = atlasList.ToArray();
+        var commonAtlasDicValue = string.Join(",", atlasArr);
+
+        Debug.LogError(commonAtlasDicValue);
+        EditorPrefs.SetString(GetType().Name + "commonAtlasDicValue", commonAtlasDicValue);
+    }
+    #endregion
     #endregion
     #region 修改
     /// <summary>
@@ -412,6 +453,33 @@ public class RapidBuildEditorTool : EditorWindow
         EditorGUILayout.EndToggleGroup();
 
     }
+    /// <summary>
+    /// 绘单个常用图集
+    /// </summary>
+    /// <param name="index"></param>
+    void DrawAtlasItem(int index)
+    {
+        UIAtlas atlasItem = null;
+        DrawHorizontal(() =>
+        {
+            if (index < commonAtlasList.Count)
+            {
+                commonAtlasList[index] = EditorGUILayout.ObjectField("常用：" + index, commonAtlasList[index], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+                atlasItem = commonAtlasList[index];
+            }
+            else
+            {
+                atlasItem = EditorGUILayout.ObjectField("常用：" + index, atlasItem, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+                commonAtlasList.Add(atlasItem);
+            }
+            if (atlasItem != null)
+                DrawButton("选中", () =>
+                {
+                    selectAtlas = atlasItem;
+                }, 50, 20);
+        });
+
+    }
     #endregion
 
     #region 保存预设
@@ -471,8 +539,7 @@ public class RapidBuildEditorTool : EditorWindow
         return GetPrefabInstanceParent(go.transform.parent.gameObject);
     }
     #endregion
-    #region 保存常用图集配置
 
-    #endregion
+  
 }
 
