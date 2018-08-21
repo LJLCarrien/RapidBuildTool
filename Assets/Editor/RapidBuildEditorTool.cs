@@ -288,6 +288,8 @@ public class RapidBuildEditorTool : EditorWindow
     {
         if (childSpList != null && childSpList.Count != 0)
         {
+            DrawButton("一键修改使用图集", OneKeyChangeAtlas);
+
             SpriteFoldout = EditorGUILayout.Foldout(SpriteFoldout, "Sprites");
             if (SpriteFoldout)
             {
@@ -302,6 +304,22 @@ public class RapidBuildEditorTool : EditorWindow
         }
 
     }
+
+    private void OneKeyChangeAtlas()
+    {
+        if (selectAtlas != null)
+        {
+            foreach (var item in childSpList)
+            {
+                item.atlas = selectAtlas;
+            }
+        }
+        else
+        {
+            ShowNotification(new GUIContent("当前未选中图集"));
+        }
+    }
+
     #endregion
     #region Textures
     private List<UITexture> childTxList;
@@ -406,6 +424,8 @@ public class RapidBuildEditorTool : EditorWindow
     void DrawToggleLabelItem(UIWidget widget, bool toggle)
     {
         var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
+        if (bIsToggle != widget.gameObject.activeSelf) Selection.activeGameObject = widget.gameObject;
+
         widget.gameObject.SetActive(bIsToggle);
         DrawHorizontal(() =>
         {
@@ -428,6 +448,7 @@ public class RapidBuildEditorTool : EditorWindow
                 var widgetTs = EditorGUILayout.Vector2Field("Transform:", new Vector2(widget.transform.localPosition.x, widget.transform.localPosition.y));
                 widget.transform.localPosition = widgetTs;
                 if (!originalTsDic.ContainsKey(widget)) originalTsDic.Add(widget, widgetTs);
+
                 DrawButton("还原", () =>
                 {
                     if (originalTsDic.ContainsKey(widget))
@@ -443,13 +464,24 @@ public class RapidBuildEditorTool : EditorWindow
     void DrawToggleSpriteItem(UISprite sprite, bool toggle)
     {
         var bIsToggle = EditorGUILayout.BeginToggleGroup(sprite.name, toggle);
+        if (bIsToggle != sprite.gameObject.activeSelf) Selection.activeGameObject = sprite.gameObject;
         sprite.gameObject.SetActive(bIsToggle);
         var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-        DrawButton("使用图集", () =>
+
+        DrawButton("更改", () =>
         {
             sprite.atlas = selectAtlas;
 
         }, 50, 20);
+
+
+        //DrawButton("输出颜色", () =>
+        //{
+        //    var RgbColor = sprite.color;
+        //    var HSBColor = RGBConvertToHSV(RgbColor);
+        //    Debug.LogError(string.Format("RGB:{0},HSV{1}", sprite.color, HSBColor));
+        //}, 50, 20);
+
         EditorGUILayout.EndToggleGroup();
 
     }
@@ -464,21 +496,59 @@ public class RapidBuildEditorTool : EditorWindow
         {
             if (index < commonAtlasList.Count)
             {
+                GUI.backgroundColor = selectAtlas == commonAtlasList[index] ? new Color(0.8f, 0.8f, 0.8f) : Color.white;
                 commonAtlasList[index] = EditorGUILayout.ObjectField("常用：" + index, commonAtlasList[index], typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
                 atlasItem = commonAtlasList[index];
+
             }
             else
             {
                 atlasItem = EditorGUILayout.ObjectField("常用：" + index, atlasItem, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
                 commonAtlasList.Add(atlasItem);
             }
+
             if (atlasItem != null)
                 DrawButton("选中", () =>
                 {
                     selectAtlas = atlasItem;
                 }, 50, 20);
+            GUI.backgroundColor = Color.white;
         });
 
+    }
+    #endregion
+    #region 颜色
+    //RGB to HSV
+    Vector3 RGBConvertToHSV(Color rgb)
+    {
+        float R = rgb.r;
+        float G = rgb.g;
+        float B = rgb.b;
+        Vector3 hsv = Vector3.zero;
+        float max1 = Mathf.Max(R, Mathf.Max(G, B));
+        float min1 = Mathf.Min(R, Mathf.Min(G, B));
+        if (Math.Abs(max1 - min1) > 0)
+        {
+            if (R == max1)
+            {
+                hsv.x = (G - B) / (max1 - min1);
+            }
+            if (G == max1)
+            {
+                hsv.x = 2 + (B - R) / (max1 - min1);
+            }
+            if (B == max1)
+            {
+                hsv.x = 4 + (R - G) / (max1 - min1);
+            }
+        }
+
+        hsv.x = hsv.x * 60.0f;
+        if (hsv.x < 0)
+            hsv.x = hsv.x + 360;
+        hsv.z = max1;
+        hsv.y = (max1 - min1) / max1;
+        return hsv;
     }
     #endregion
 
@@ -540,6 +610,6 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
 
-  
+
 }
 
