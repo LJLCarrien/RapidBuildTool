@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UnityEditor;
 
@@ -33,6 +34,7 @@ public class RapidBuildEditorTool : EditorWindow
     private bool SpriteFoldout;
     //选中图集下标
     private int UseChoiceAtlasIndex;
+
     void OnGUI()
     {
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
@@ -45,12 +47,6 @@ public class RapidBuildEditorTool : EditorWindow
         //常用图集
         ShowComAtlas();
         if (totalAtlasNum > 0)
-            //DrawHorizontal(() =>
-            //{
-            //    DrawButton(allSelectState ? "取消全选" : "全部选中", CancleAllAtlasSelect);
-            //    DrawButton("选中&&最后的", UseLastSelectAltas);
-            //});
-
             EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
         DrawVertical(() =>
         {
@@ -84,6 +80,7 @@ public class RapidBuildEditorTool : EditorWindow
                 ShowSprites();
             }
         }, "Box");
+        DrawButton("查Foreach", FindAllScripts);
 
     }
 
@@ -201,7 +198,7 @@ public class RapidBuildEditorTool : EditorWindow
         var atlasArr = atlasList.ToArray();
         var commonAtlasDicValue = string.Join(",", atlasArr);
 
-        Debug.LogError(commonAtlasDicValue);
+        //Debug.LogError(commonAtlasDicValue);
         EditorPrefs.SetString(GetType().Name + "commonAtlasDicValue", commonAtlasDicValue);
     }
     #endregion
@@ -586,7 +583,7 @@ public class RapidBuildEditorTool : EditorWindow
     /// <summary>
     /// 遍历获取prefab节点所在的根prefab节点
     /// </summary>
-    static GameObject GetPrefabInstanceParent(GameObject go)
+    private GameObject GetPrefabInstanceParent(GameObject go)
     {
         if (go == null)
         {
@@ -610,6 +607,20 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
 
+    #region 查找foreach
+
+    private void FindAllScripts()
+    {
+        var stringBuilder = new StringBuilder();
+        var scriptGuids = AssetDatabase.FindAssets("t:script", new string[] { "Assets/Scripts" });
+        foreach (var itemScript in scriptGuids)
+        {
+            var tPath = AssetDatabase.GUIDToAssetPath(itemScript);
+            var tFileContent = File.ReadAllText(tPath);
+            Debug.LogError(tFileContent);
+        }
+    }
+    #endregion
 
 }
 
