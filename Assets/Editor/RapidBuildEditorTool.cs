@@ -1,8 +1,8 @@
 ﻿using System;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 
@@ -48,39 +48,48 @@ public class RapidBuildEditorTool : EditorWindow
         ShowComAtlas();
         if (totalAtlasNum > 0)
             EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
-        DrawVertical(() =>
+        DrawHorizontal(() =>
         {
-            if (mTarget == null) mTarget = Selection.activeGameObject;
-            mTarget = EditorGUILayout.ObjectField("修改对象：", mTarget, typeof(GameObject), true, GUILayout.ExpandWidth(true)) as GameObject;
-            DrawButton("保存修改", ApplyChangeAndSave);
-
-            if (mTarget != null)
+            DrawVertical(() =>
             {
-                DrawHorizontal(() =>
+                if (mTarget == null) mTarget = Selection.activeGameObject;
+                mTarget = EditorGUILayout.ObjectField("修改对象：", mTarget, typeof(GameObject), true, GUILayout.ExpandWidth(true)) as GameObject;
+
+                if (mTarget != null)
                 {
-                    isNeedChangeName = GUILayout.Toggle(isNeedChangeName, "修改名字");
-                    isNeedChangeTs = GUILayout.Toggle(isNeedChangeTs, "修改位置");
-                });
-                isOnlyShowDepthBelowTen = GUILayout.Toggle(isOnlyShowDepthBelowTen, "只显示层级低于10");
+                    DrawHorizontal(() =>
+                    {
+                        isNeedChangeName = GUILayout.Toggle(isNeedChangeName, "修改名字");
+                        isNeedChangeTs = GUILayout.Toggle(isNeedChangeTs, "修改位置");
+                    });
+                    isOnlyShowDepthBelowTen = GUILayout.Toggle(isOnlyShowDepthBelowTen, "只显示层级低于10");
+
+                    if (resultStringBuilder != null && resultStringBuilder.Length > 0)
+                        GUILayout.TextArea(resultStringBuilder.ToString());
+
+                    DrawHorizontal(() =>
+                    {
+                        //labels sprites Textures
+                        DrawToggleBtn();
+                    });
+
+                    //labels
+                    ShowLabels();
+                    //Sprites
+                    ShowSprites();
+                }
+            }, "Box");
+            DrawVertical(() =>
+            {
+                DrawButton("保存修改", ApplyChangeAndSave);
 
                 DrawButton("一键修正缩放", OneKeyResetScale);
-                if (resultStringBuilder != null && resultStringBuilder.Length > 0)
-                    GUILayout.TextArea(resultStringBuilder.ToString());
+                DrawButton("一键修改使用图集", OneKeyChangeAtlas);
+                DrawButton("查Foreach", FindAllScripts);
 
-                DrawHorizontal(() =>
-                {
-                    DrawButton("获取Label", GetLabels);
-                    DrawButton("获取所有Sprite", GetSprites);
-                    DrawButton("获取所有Texture", GetTextures);
-                });
+            }, "Box");
+        });
 
-                //labels
-                ShowLabels();
-                //Sprites
-                ShowSprites();
-            }
-        }, "Box");
-        DrawButton("查Foreach", FindAllScripts);
 
     }
 
@@ -204,6 +213,64 @@ public class RapidBuildEditorTool : EditorWindow
     #endregion
     #endregion
     #region 修改
+    #region 分页组
+    void DrawButton(string cName, Action cClickAction, int cWidth = 100, int cHeight = 50)
+    {
+        if (GUILayout.Button(cName, GUILayout.Width(cWidth), GUILayout.Height(cHeight)))
+        {
+            if (cClickAction != null) cClickAction();
+        }
+    }
+
+    private enum ShowType
+    {
+        Label,
+        Sprite,
+        Texture
+    }
+
+    private ShowType curShowType;
+    void DrawToggleBtn()
+    {
+        DrawHorizontal(() =>
+        {
+
+            if (GUILayout.Toggle(curShowType == ShowType.Label, "Labels", "ButtonLeft"))
+            {
+                curShowType = ShowType.Label;
+            }
+            if (GUILayout.Toggle(curShowType == ShowType.Sprite, "Sprites", "ButtonMid"))
+            {
+                curShowType = ShowType.Sprite;
+            }
+            if (GUILayout.Toggle(curShowType == ShowType.Texture, "Textures", "ButtonRight"))
+            {
+                curShowType = ShowType.Texture;
+            }
+            lblFoldout = curShowType == ShowType.Label;
+            SpriteFoldout = curShowType == ShowType.Sprite;
+
+            var lblActive = curShowType == ShowType.Label;
+            var SprActive = curShowType == ShowType.Sprite;
+            var TexActive = curShowType == ShowType.Texture;
+
+            if (lblActive)
+            {
+                GetLabels();
+            }
+            else if (SprActive)
+            {
+                GetSprites();
+            }
+            else if (TexActive)
+            {
+                GetTextures();
+            }
+
+        });
+
+    }
+    #endregion
     /// <summary>
     /// 是否需要提供修改名字
     /// </summary>
@@ -256,7 +323,7 @@ public class RapidBuildEditorTool : EditorWindow
     {
         if (childLblList != null && childLblList.Count != 0)
         {
-            lblFoldout = EditorGUILayout.Foldout(lblFoldout, "Labels");
+            //lblFoldout = EditorGUILayout.Foldout(lblFoldout, "Labels");
             if (lblFoldout)
             {
                 DrawVertical(() =>
@@ -285,9 +352,7 @@ public class RapidBuildEditorTool : EditorWindow
     {
         if (childSpList != null && childSpList.Count != 0)
         {
-            DrawButton("一键修改使用图集", OneKeyChangeAtlas);
-
-            SpriteFoldout = EditorGUILayout.Foldout(SpriteFoldout, "Sprites");
+            //SpriteFoldout = EditorGUILayout.Foldout(SpriteFoldout, "Sprites");
             if (SpriteFoldout)
             {
                 DrawVertical(() =>
@@ -333,16 +398,10 @@ public class RapidBuildEditorTool : EditorWindow
     private List<T> GetChildsWithThis<T>() where T : UIWidget
     {
         List<T> chilTList = new List<T>();
-        var maxCount = mTarget.transform.childCount;
-        for (int i = 0; i < maxCount; i++)
-        {
-            var componentTs = mTarget.transform.GetChild(i);
-            var component = componentTs.GetComponent<T>();
-            if (component != null)
-                chilTList.Add(component);
-        }
-        if (chilTList.Count > 0) return chilTList;
-        else return null;
+        var com = mTarget.GetComponentsInChildren<T>(true);
+        chilTList.AddRange(com.ToList());
+        return chilTList;
+
     }
     #endregion
     #region 其他功能
@@ -372,13 +431,7 @@ public class RapidBuildEditorTool : EditorWindow
     #endregion
 
     #region 辅助
-    void DrawButton(string cName, Action cClickAction, int cWidth = 100, int cHeight = 50)
-    {
-        if (GUILayout.Button(cName, GUILayout.Width(cWidth), GUILayout.Height(cHeight)))
-        {
-            if (cClickAction != null) cClickAction();
-        }
-    }
+
     void DrawVertical(Action cAction, string cStyle, params GUILayoutOption[] cOptions)
     {
         if (cAction != null)
