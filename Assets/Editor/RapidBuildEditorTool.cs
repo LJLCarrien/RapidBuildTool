@@ -38,9 +38,9 @@ public class RapidBuildEditorTool : EditorWindow
     void OnGUI()
     {
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
-        DrawVertical(() =>
+        DrawGuiHelper.DrawVertical(() =>
         {
-            DrawButton("创建按钮", CreateButton);
+            DrawGuiHelper.DrawButton("创建按钮", CreateButton);
             isNeedScale = GUILayout.Toggle(isNeedScale, "点击需要缩放效果");
         }, "Box");
 
@@ -48,16 +48,16 @@ public class RapidBuildEditorTool : EditorWindow
         ShowComAtlas();
         if (totalAtlasNum > 0)
             EditorGUILayout.HelpBox("针对此对象的子物体修改:", MessageType.Info);
-        DrawHorizontal(() =>
+        DrawGuiHelper.DrawHorizontal(() =>
         {
-            DrawVertical(() =>
+            DrawGuiHelper.DrawVertical(() =>
             {
                 if (mTarget == null) mTarget = Selection.activeGameObject;
                 mTarget = EditorGUILayout.ObjectField("修改对象：", mTarget, typeof(GameObject), true, GUILayout.ExpandWidth(true)) as GameObject;
 
                 if (mTarget != null)
                 {
-                    DrawHorizontal(() =>
+                    DrawGuiHelper.DrawHorizontal(() =>
                     {
                         isNeedChangeName = GUILayout.Toggle(isNeedChangeName, "修改名字");
                         isNeedChangeTs = GUILayout.Toggle(isNeedChangeTs, "修改位置");
@@ -67,25 +67,28 @@ public class RapidBuildEditorTool : EditorWindow
                     if (resultStringBuilder != null && resultStringBuilder.Length > 0)
                         GUILayout.TextArea(resultStringBuilder.ToString());
 
-                    DrawHorizontal(() =>
+                    DrawGuiHelper.DrawHorizontal(() =>
                     {
                         //labels sprites Textures
                         DrawToggleBtn();
                     });
 
-                    //labels
-                    ShowLabels();
-                    //Sprites
-                    ShowSprites();
+                    DrawGuiHelper.DrawScrollView(() =>
+                    {
+                        //labels
+                        ShowLabels();
+                        //Sprites
+                        ShowSprites();
+                    }, ref mLblScrollViewPos);
                 }
             }, "Box");
-            DrawVertical(() =>
+            DrawGuiHelper.DrawVertical(() =>
             {
-                DrawButton("保存修改", ApplyChangeAndSave);
+                DrawGuiHelper.DrawButton("保存修改", ApplyChangeAndSave);
 
-                DrawButton("一键修正缩放", OneKeyResetScale);
-                DrawButton("一键修改使用图集", OneKeyChangeAtlas);
-                DrawButton("查Foreach", FindAllScripts);
+                DrawGuiHelper.DrawButton("一键修正缩放", OneKeyResetScale);
+                DrawGuiHelper.DrawButton("一键修改使用图集", OneKeyChangeAtlas);
+                DrawGuiHelper.DrawButton("查Foreach", FindAllScripts);
 
             }, "Box");
         });
@@ -153,7 +156,7 @@ public class RapidBuildEditorTool : EditorWindow
     private UIAtlas selectAtlas;
     private void ShowComAtlas()
     {
-        DrawHorizontal(() =>
+        DrawGuiHelper.DrawHorizontal(() =>
         {
             commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "常用图集：");
             EditorGUILayout.LabelField("Size:", GUILayout.Width(90));
@@ -164,7 +167,7 @@ public class RapidBuildEditorTool : EditorWindow
 
         if (commonAtlasFoldout)
         {
-            DrawVertical(() =>
+            DrawGuiHelper.DrawVertical(() =>
             {
                 for (int i = 0; i < totalAtlasNum; i++)
                 {
@@ -214,13 +217,6 @@ public class RapidBuildEditorTool : EditorWindow
     #endregion
     #region 修改
     #region 分页组
-    void DrawButton(string cName, Action cClickAction, int cWidth = 100, int cHeight = 50)
-    {
-        if (GUILayout.Button(cName, GUILayout.Width(cWidth), GUILayout.Height(cHeight)))
-        {
-            if (cClickAction != null) cClickAction();
-        }
-    }
 
     private enum ShowType
     {
@@ -232,7 +228,7 @@ public class RapidBuildEditorTool : EditorWindow
     private ShowType curShowType;
     void DrawToggleBtn()
     {
-        DrawHorizontal(() =>
+        DrawGuiHelper.DrawHorizontal(() =>
         {
 
             if (GUILayout.Toggle(curShowType == ShowType.Label, "Labels", "ButtonLeft"))
@@ -285,6 +281,8 @@ public class RapidBuildEditorTool : EditorWindow
     private bool isOnlyShowDepthBelowTen;
 
     #region Labels
+
+    private Vector2 mLblScrollViewPos;
     private readonly int LabelDefaultDepth = 10;
     private List<UILabel> childLblList;
     /// <summary>
@@ -296,6 +294,7 @@ public class RapidBuildEditorTool : EditorWindow
         var tmpList = GetChildsWithThis<UILabel>();
         if (tmpList != null)
         {
+
             if (isOnlyShowDepthBelowTen)
             {
                 var tmpDepthBelowTenList = new List<UILabel>();
@@ -312,9 +311,11 @@ public class RapidBuildEditorTool : EditorWindow
             }
             else
                 childLblList.AddRange(tmpList);
+
+
         }
 
-        Debug.LogError(childLblList.Count);
+        //Debug.LogError(childLblList.Count);
     }
     /// <summary>
     /// 显示带Label组件的子物体
@@ -326,7 +327,7 @@ public class RapidBuildEditorTool : EditorWindow
             //lblFoldout = EditorGUILayout.Foldout(lblFoldout, "Labels");
             if (lblFoldout)
             {
-                DrawVertical(() =>
+                DrawGuiHelper.DrawVertical(() =>
                 {
                     foreach (var itemLbl in childLblList)
                     {
@@ -345,7 +346,7 @@ public class RapidBuildEditorTool : EditorWindow
         var tmpList = GetChildsWithThis<UISprite>();
         if (tmpList != null)
             childSpList.AddRange(tmpList);
-        Debug.LogError(childSpList.Count);
+        //Debug.LogError(childSpList.Count);
     }
 
     private void ShowSprites()
@@ -355,7 +356,7 @@ public class RapidBuildEditorTool : EditorWindow
             //SpriteFoldout = EditorGUILayout.Foldout(SpriteFoldout, "Sprites");
             if (SpriteFoldout)
             {
-                DrawVertical(() =>
+                DrawGuiHelper.DrawVertical(() =>
                 {
                     foreach (var item in childSpList)
                     {
@@ -391,7 +392,7 @@ public class RapidBuildEditorTool : EditorWindow
         var tmpList = GetChildsWithThis<UITexture>();
         if (tmpList != null)
             childTxList.AddRange(tmpList);
-        Debug.LogError(childTxList.Count);
+        //Debug.LogError(childTxList.Count);
     }
     #endregion
     #region 功能辅助
@@ -421,7 +422,7 @@ public class RapidBuildEditorTool : EditorWindow
                 if (childTs.localScale != needResetToThisScale)
                 {
                     var oldLocalScale = childTs.localScale;
-                    childTs.localScale = needResetToThisScale;
+                    //childTs.localScale = needResetToThisScale;
                     resultStringBuilder.AppendLine(childTs.name + " 旧:" + oldLocalScale + " 新:" + childTs.localScale);
                 }
             }
@@ -432,98 +433,24 @@ public class RapidBuildEditorTool : EditorWindow
 
     #region 辅助
 
-    void DrawVertical(Action cAction, string cStyle, params GUILayoutOption[] cOptions)
-    {
-        if (cAction != null)
-        {
-
-            if (string.IsNullOrEmpty(cStyle)) EditorGUILayout.BeginVertical(cOptions);
-            else EditorGUILayout.BeginVertical(cStyle, cOptions);
-            cAction();
-            EditorGUILayout.EndVertical();
-        }
-    }
-    void DrawVertical(Action cAction, params GUILayoutOption[] cOptions)
-    {
-        if (cAction != null)
-        {
-            EditorGUILayout.BeginVertical(cOptions);
-            cAction();
-            EditorGUILayout.EndVertical();
-        }
-    }
-    void DrawHorizontal(Action cAction, params GUILayoutOption[] cOptions)
-    {
-        if (cAction != null)
-        {
-            EditorGUILayout.BeginHorizontal(cOptions);
-            cAction();
-            EditorGUILayout.EndHorizontal();
-        }
-    }
-
-    //原始名字字典
-    Dictionary<UIWidget, string> originalNameDic = new Dictionary<UIWidget, string>();
-    //原始位置字典
-    Dictionary<UIWidget, Vector2> originalTsDic = new Dictionary<UIWidget, Vector2>();
     /// <summary>
     /// 绘单个LabelItem
     /// </summary>
-    /// <param name="widget"></param>
-    /// <param name="toggle"></param>
-    void DrawToggleLabelItem(UIWidget widget, bool toggle)
+    void DrawToggleLabelItem(UILabel lbl, bool toggle)
     {
-        var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
-        if (bIsToggle != widget.gameObject.activeSelf) Selection.activeGameObject = widget.gameObject;
-
-        widget.gameObject.SetActive(bIsToggle);
-        DrawHorizontal(() =>
-        {
-            if (isNeedChangeName)
-            {
-                var widgetName = EditorGUILayout.TextField("name:", widget.name);
-                widget.name = widgetName;
-                if (!originalNameDic.ContainsKey(widget)) originalNameDic.Add(widget, widget.name);
-                DrawButton("还原", () =>
-                {
-                    if (originalNameDic.ContainsKey(widget))
-                        widget.name = originalNameDic[widget];
-                }, 50, 20);
-            }
-        });
-        DrawHorizontal(() =>
-        {
-            if (isNeedChangeTs)
-            {
-                var widgetTs = EditorGUILayout.Vector2Field("Transform:", new Vector2(widget.transform.localPosition.x, widget.transform.localPosition.y));
-                widget.transform.localPosition = widgetTs;
-                if (!originalTsDic.ContainsKey(widget)) originalTsDic.Add(widget, widgetTs);
-
-                DrawButton("还原", () =>
-                {
-                    if (originalTsDic.ContainsKey(widget))
-                    {
-                        widget.transform.localPosition = originalTsDic[widget];
-                    }
-                }, 50, 20);
-            }
-        });
-        EditorGUILayout.EndToggleGroup();
+        LblItem lblItem = new LblItem(lbl, toggle);
+        lblItem.SetIsShowName(isNeedChangeName);
+        lblItem.SetIsShowPos(isNeedChangeTs);
+        lblItem.DrawItem();
     }
 
     void DrawToggleSpriteItem(UISprite sprite, bool toggle)
     {
-        var bIsToggle = EditorGUILayout.BeginToggleGroup(sprite.name, toggle);
-        if (bIsToggle != sprite.gameObject.activeSelf) Selection.activeGameObject = sprite.gameObject;
-        sprite.gameObject.SetActive(bIsToggle);
-        var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-
-        DrawButton("更改", () =>
-        {
-            sprite.atlas = selectAtlas;
-
-        }, 50, 20);
-
+        SpriteItem spriteItem = new SpriteItem(sprite, toggle);
+        spriteItem.SetChangeAtlas(selectAtlas);
+        spriteItem.SetIsShowName(isNeedChangeName);
+        spriteItem.SetIsShowPos(isNeedChangeTs);
+        spriteItem.DrawItem();
 
         //DrawButton("输出颜色", () =>
         //{
@@ -532,7 +459,6 @@ public class RapidBuildEditorTool : EditorWindow
         //    Debug.LogError(string.Format("RGB:{0},HSV{1}", sprite.color, HSBColor));
         //}, 50, 20);
 
-        EditorGUILayout.EndToggleGroup();
 
     }
     /// <summary>
@@ -542,7 +468,7 @@ public class RapidBuildEditorTool : EditorWindow
     void DrawAtlasItem(int index)
     {
         UIAtlas atlasItem = null;
-        DrawHorizontal(() =>
+        DrawGuiHelper.DrawHorizontal(() =>
         {
             if (index < commonAtlasList.Count)
             {
@@ -558,7 +484,7 @@ public class RapidBuildEditorTool : EditorWindow
             }
 
             if (atlasItem != null)
-                DrawButton("选中", () =>
+                DrawGuiHelper.DrawButton("选中", () =>
                 {
                     selectAtlas = atlasItem;
                 }, 50, 20);
@@ -629,7 +555,7 @@ public class RapidBuildEditorTool : EditorWindow
         {
             prefabAsset = PrefabUtility.GetPrefabParent(prefabGo);
             if (prefabAsset != null)
-                PrefabUtility.ReplacePrefab(prefabGo, prefabAsset, ReplacePrefabOptions.ConnectToPrefab);
+                PrefabUtility.ReplacePrefab(prefabGo, prefabAsset, ReplacePrefabOptions.ConnectToPrefab | ReplacePrefabOptions.ReplaceNameBased);
         }
         AssetDatabase.SaveAssets();
     }
@@ -660,7 +586,7 @@ public class RapidBuildEditorTool : EditorWindow
     }
     #endregion
 
-    #region 查找foreach
+    #region 一键查找foreach
 
     private void FindAllScripts()
     {
@@ -669,11 +595,198 @@ public class RapidBuildEditorTool : EditorWindow
         foreach (var itemScript in scriptGuids)
         {
             var tPath = AssetDatabase.GUIDToAssetPath(itemScript);
+            var fielName = Path.GetFileName(tPath);
             var tFileContent = File.ReadAllText(tPath);
-            Debug.LogError(tFileContent);
+            if (tFileContent.Contains("foreach"))
+                Debug.LogError(fielName);
         }
     }
     #endregion
 
+}
+public static class DrawGuiHelper
+{
+    public static void DrawVertical(Action cAction, string cStyle, params GUILayoutOption[] cOptions)
+    {
+        if (cAction != null)
+        {
+
+            if (string.IsNullOrEmpty(cStyle)) EditorGUILayout.BeginVertical(cOptions);
+            else EditorGUILayout.BeginVertical(cStyle, cOptions);
+            cAction();
+            EditorGUILayout.EndVertical();
+        }
+    }
+    public static void DrawVertical(Action cAction, params GUILayoutOption[] cOptions)
+    {
+        if (cAction != null)
+        {
+            EditorGUILayout.BeginVertical(cOptions);
+            cAction();
+            EditorGUILayout.EndVertical();
+        }
+    }
+    public static void DrawHorizontal(Action cAction, params GUILayoutOption[] cOptions)
+    {
+        if (cAction != null)
+        {
+            EditorGUILayout.BeginHorizontal(cOptions);
+            cAction();
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    public static void DrawScrollView(Action cChild, ref Vector2 cPos, params GUILayoutOption[] cOptions)
+    {
+        if (cChild != null)
+        {
+            cPos = EditorGUILayout.BeginScrollView(cPos, cOptions);
+            cChild();
+            EditorGUILayout.EndScrollView();
+        }
+    }
+    public static void DrawButton(string cName, Action cClickAction, int cWidth = 100, int cHeight = 50)
+    {
+        if (GUILayout.Button(cName, GUILayout.Width(cWidth), GUILayout.Height(cHeight)))
+        {
+            if (cClickAction != null) cClickAction();
+        }
+    }
+
+}
+public class WidgetItem
+{
+    private UIWidget widget;
+    private bool toggle;
+    /// <summary>
+    /// 是否需要提供修改名字
+    /// </summary>
+    private bool isNeedChangeName = true;
+    /// <summary>
+    /// 是否需要提供修改位置
+    /// </summary>
+    private bool isNeedChangeTs = true;
+
+    //原始名字字典
+    Dictionary<UIWidget, string> originalNameDic = new Dictionary<UIWidget, string>();
+    //原始位置字典
+    Dictionary<UIWidget, Vector2> originalTsDic = new Dictionary<UIWidget, Vector2>();
+
+    public WidgetItem(UIWidget w, bool t)
+    {
+        widget = w;
+        toggle = t;
+    }
+
+    public void SetIsShowName(bool b)
+    {
+        isNeedChangeName = b;
+    }
+
+    public void SetIsShowPos(bool b)
+    {
+        isNeedChangeTs = b;
+    }
+    protected void DrawName()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            if (isNeedChangeName)
+            {
+                var widgetName = EditorGUILayout.TextField("name:", widget.name);
+                widget.name = widgetName;
+                if (!originalNameDic.ContainsKey(widget)) originalNameDic.Add(widget, widget.name);
+                DrawGuiHelper.DrawButton("还原", () =>
+                {
+                    if (originalNameDic.ContainsKey(widget))
+                        widget.name = originalNameDic[widget];
+                }, 50, 20);
+            }
+        });
+    }
+
+    protected void DrwaTs()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            if (isNeedChangeTs)
+            {
+                var widgetTs = EditorGUILayout.Vector2Field("Transform:", new Vector2(widget.transform.localPosition.x, widget.transform.localPosition.y));
+                widget.transform.localPosition = widgetTs;
+                if (!originalTsDic.ContainsKey(widget)) originalTsDic.Add(widget, widgetTs);
+
+                DrawGuiHelper.DrawButton("还原", () =>
+                {
+                    if (originalTsDic.ContainsKey(widget))
+                    {
+                        widget.transform.localPosition = originalTsDic[widget];
+                    }
+                }, 50, 20);
+            }
+        });
+    }
+    public void DrawItem()
+    {
+        var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
+        if (bIsToggle != widget.gameObject.activeSelf) Selection.activeGameObject = widget.gameObject;
+        widget.gameObject.SetActive(bIsToggle);
+
+        DrawName();
+        DrwaTs();
+        DrawItemOtherFunc();
+        EditorGUILayout.EndToggleGroup();
+    }
+
+    protected virtual void DrawItemOtherFunc() { }
+}
+
+public class LblItem : WidgetItem
+{
+    private UILabel Label;
+    public LblItem(UILabel w, bool t) : base(w, t)
+    {
+        Label = w;
+    }
+    protected void DrawLblDepth()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            var depth = EditorGUILayout.IntField(Label.depth);
+            Label.depth = depth;
+        });
+    }
+    protected override void DrawItemOtherFunc()
+    {
+        DrawLblDepth();
+    }
+}
+
+public class SpriteItem : WidgetItem
+{
+    private UISprite sprite;
+    private UIAtlas selectAtlas;
+
+    public SpriteItem(UISprite w, bool t) : base(w, t)
+    {
+        sprite = w;
+    }
+    /// <summary>
+    /// 设置图片需要更改为的图集
+    /// </summary>
+    /// <param name="atlas"></param>
+    public void SetChangeAtlas(UIAtlas atlas)
+    {
+        selectAtlas = atlas;
+    }
+    protected override void DrawItemOtherFunc()
+    {
+        var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+
+        DrawGuiHelper.DrawButton("更改", () =>
+        {
+            sprite.atlas = selectAtlas;
+
+        }, 50, 20);
+    }
 }
 
