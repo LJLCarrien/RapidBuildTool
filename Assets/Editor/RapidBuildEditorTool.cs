@@ -725,6 +725,15 @@ public class WidgetItem
             }
         });
     }
+    protected void DrawLblDepth()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            EditorGUILayout.LabelField("depth:", GUILayout.Width(50));
+            var depth = EditorGUILayout.IntField(widget.depth);
+            widget.depth = depth;
+        });
+    }
     public void DrawItem()
     {
         var bIsToggle = EditorGUILayout.BeginToggleGroup(widget.name, toggle);
@@ -733,6 +742,7 @@ public class WidgetItem
 
         DrawName();
         DrwaTs();
+        DrawLblDepth();
         DrawItemOtherFunc();
         EditorGUILayout.EndToggleGroup();
     }
@@ -747,17 +757,17 @@ public class LblItem : WidgetItem
     {
         Label = w;
     }
-    protected void DrawLblDepth()
+
+    protected void DrawText()
     {
-        DrawGuiHelper.DrawHorizontal(() =>
-        {
-            var depth = EditorGUILayout.IntField(Label.depth);
-            Label.depth = depth;
-        });
+        var Textcontent = EditorGUILayout.TextField("text:", Label.text);
+        Label.text = Textcontent;
+
     }
     protected override void DrawItemOtherFunc()
     {
-        DrawLblDepth();
+        DrawText();
+
     }
 }
 
