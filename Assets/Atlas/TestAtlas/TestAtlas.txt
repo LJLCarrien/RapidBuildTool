@@ -1,0 +1,20 @@
+{"frames": {
+
+"mon.png":
+{
+	"frame": {"x":2,"y":2,"w":760,"h":435},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":129,"y":85,"w":760,"h":435},
+	"sourceSize": {"w":1024,"h":559}
+}},
+"meta": {
+	"app": "http://www.texturepacker.com",
+	"version": "1.0",
+	"image": "TestAtlas.png",
+	"format": "RGBA8888",
+	"size": {"w":1024,"h":512},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:9835616c4c80b25c84344bae8a86f058$"
+}
+}
