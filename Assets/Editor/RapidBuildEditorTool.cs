@@ -63,6 +63,7 @@ public class RapidBuildEditorTool : EditorWindow
                         isNeedChangeTs = GUILayout.Toggle(isNeedChangeTs, "修改位置");
                     });
                     isOnlyShowDepthBelowTen = GUILayout.Toggle(isOnlyShowDepthBelowTen, "只显示层级低于10");
+                 
 
                     if (resultStringBuilder != null && resultStringBuilder.Length > 0)
                         GUILayout.TextArea(resultStringBuilder.ToString());
@@ -72,7 +73,6 @@ public class RapidBuildEditorTool : EditorWindow
                         //labels sprites Textures
                         DrawToggleBtn();
                     });
-
                     DrawGuiHelper.DrawScrollView(() =>
                     {
                         //labels
@@ -80,6 +80,7 @@ public class RapidBuildEditorTool : EditorWindow
                         //Sprites
                         ShowSprites();
                     }, ref mLblScrollViewPos);
+
                 }
             }, "Box");
             DrawGuiHelper.DrawVertical(() =>
@@ -158,8 +159,8 @@ public class RapidBuildEditorTool : EditorWindow
     {
         DrawGuiHelper.DrawHorizontal(() =>
         {
-            commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "常用图集：");
-            EditorGUILayout.LabelField("Size:", GUILayout.Width(90));
+            commonAtlasFoldout = EditorGUILayout.Foldout(commonAtlasFoldout, "常用图集");
+            DrawGuiHelper.DrawLabel("Size");
             totalAtlasNum = EditorGUILayout.IntField(totalAtlasNum);
         });
 
@@ -652,6 +653,10 @@ public static class DrawGuiHelper
             if (cClickAction != null) cClickAction();
         }
     }
+    public static void DrawLabel(string cName,int widht=50)
+    {
+        EditorGUILayout.LabelField(cName, GUILayout.Width(widht));
+    }
 
 }
 public class WidgetItem
@@ -693,7 +698,8 @@ public class WidgetItem
         {
             if (isNeedChangeName)
             {
-                var widgetName = EditorGUILayout.TextField("name:", widget.name);
+                DrawGuiHelper.DrawLabel("Name");
+                var widgetName = EditorGUILayout.TextField("", widget.name);
                 widget.name = widgetName;
                 if (!originalNameDic.ContainsKey(widget)) originalNameDic.Add(widget, widget.name);
                 DrawGuiHelper.DrawButton("还原", () =>
@@ -711,7 +717,7 @@ public class WidgetItem
         {
             if (isNeedChangeTs)
             {
-                var widgetTs = EditorGUILayout.Vector2Field("Transform:", new Vector2(widget.transform.localPosition.x, widget.transform.localPosition.y));
+                var widgetTs = EditorGUILayout.Vector2Field("Transform", new Vector2(widget.transform.localPosition.x, widget.transform.localPosition.y));
                 widget.transform.localPosition = widgetTs;
                 if (!originalTsDic.ContainsKey(widget)) originalTsDic.Add(widget, widgetTs);
 
@@ -729,7 +735,7 @@ public class WidgetItem
     {
         DrawGuiHelper.DrawHorizontal(() =>
         {
-            EditorGUILayout.LabelField("depth:", GUILayout.Width(50));
+            DrawGuiHelper.DrawLabel("Depth");
             var depth = EditorGUILayout.IntField(widget.depth);
             widget.depth = depth;
         });
@@ -760,8 +766,13 @@ public class LblItem : WidgetItem
 
     protected void DrawText()
     {
-        var Textcontent = EditorGUILayout.TextField("text:", Label.text);
-        Label.text = Textcontent;
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            DrawGuiHelper.DrawLabel("Text");
+            var Textcontent = EditorGUILayout.TextField("", Label.text);
+            Label.text = Textcontent;
+        });
+      
 
     }
     protected override void DrawItemOtherFunc()
@@ -788,15 +799,47 @@ public class SpriteItem : WidgetItem
     {
         selectAtlas = atlas;
     }
+
+    private void DrawUsingAtlas()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            DrawGuiHelper.DrawLabel("Atlas");
+            var usingAtlas = EditorGUILayout.ObjectField("", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
+            DrawGuiHelper.DrawButton("更改", () =>
+            {
+                if (usingAtlas != selectAtlas)
+                    sprite.atlas = selectAtlas;
+            }, 50, 20);
+        });
+    }
+
+    private void DrawUsingSprite()
+    {
+        DrawGuiHelper.DrawHorizontal(() =>
+        {
+            if (NGUIEditorTools.DrawPrefixButton("Sprite"))
+            {
+                NGUISettings.atlas = sprite.atlas;
+                NGUISettings.selectedSprite = sprite.name;
+                //ComponentSelector.Show<UIAtlas>(OnSelectAtlas);
+                Debug.LogError("Click");
+            }
+            //NGUIEditorTools.DrawPadding();
+
+            if (GUILayout.Button(sprite.spriteName, "HelpBox", GUILayout.Height(18f)))
+            {
+                NGUIEditorTools.LoacationSpriteAsset(sprite.atlas, sprite.spriteName);
+            }
+
+        });
+
+    }
+
     protected override void DrawItemOtherFunc()
     {
-        var usingAtlas = EditorGUILayout.ObjectField("Atlas：", sprite.atlas, typeof(UIAtlas), true, GUILayout.ExpandWidth(true)) as UIAtlas;
-
-        DrawGuiHelper.DrawButton("更改", () =>
-        {
-            sprite.atlas = selectAtlas;
-
-        }, 50, 20);
+        DrawUsingAtlas();
+        DrawUsingSprite();
     }
 }
 
