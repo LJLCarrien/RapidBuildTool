@@ -8,12 +8,9 @@ public class CalTsEditorTool : EditorWindow
     [MenuItem("Tools/局部位置计算器 &%C")]
     public static void ShowWindow()
     {
-        CalTsEditorTool callTsTool = (CalTsEditorTool)GetWindow(typeof(CalTsEditorTool));
+        CalTsEditorTool callTsTool = CreateInstance<CalTsEditorTool>();
         callTsTool.Show();
     }
-
-
-
 
     void OnGUI()
     {

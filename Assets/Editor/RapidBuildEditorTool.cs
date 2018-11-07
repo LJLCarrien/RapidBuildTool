@@ -13,7 +13,8 @@ public class RapidBuildEditorTool : EditorWindow
     [MenuItem("Tools/拼UI神器 &#Q")]
     static void ShowWindow()
     {
-        cWin = CreateInstance<RapidBuildEditorTool>();
+        if (cWin != null) return;
+        cWin = (RapidBuildEditorTool)GetWindow(typeof(RapidBuildEditorTool));
         cWin.Show();
         cWin.Init();
     }
@@ -25,6 +26,7 @@ public class RapidBuildEditorTool : EditorWindow
     void OnDestroy()
     {
         SaveAltasSetting();
+        cWin = null;
     }
     /// <summary>
     /// 修改对象
@@ -64,7 +66,7 @@ public class RapidBuildEditorTool : EditorWindow
                         isNeedChangeTs = GUILayout.Toggle(isNeedChangeTs, "修改位置");
                     });
                     isOnlyShowDepthBelowTen = GUILayout.Toggle(isOnlyShowDepthBelowTen, "只显示层级低于10");
-                 
+
 
                     if (resultStringBuilder != null && resultStringBuilder.Length > 0)
                         GUILayout.TextArea(resultStringBuilder.ToString());
@@ -659,7 +661,7 @@ public static class DrawGuiHelper
             if (cClickAction != null) cClickAction();
         }
     }
-    public static void DrawLabel(string cName,int widht=50)
+    public static void DrawLabel(string cName, int widht = 50)
     {
         EditorGUILayout.LabelField(cName, GUILayout.Width(widht));
     }
@@ -778,7 +780,7 @@ public class LblItem : WidgetItem
             var Textcontent = EditorGUILayout.TextField("", Label.text);
             Label.text = Textcontent;
         });
-      
+
 
     }
     protected override void DrawItemOtherFunc()
