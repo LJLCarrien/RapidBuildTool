@@ -37,6 +37,7 @@ public class RapidBuildEditorTool : EditorWindow
 
     void OnGUI()
     {
+
         EditorGUILayout.HelpBox("创建对象:", MessageType.Info, true);
         DrawGuiHelper.DrawVertical(() =>
         {
@@ -86,7 +87,7 @@ public class RapidBuildEditorTool : EditorWindow
             DrawGuiHelper.DrawVertical(() =>
             {
                 DrawGuiHelper.DrawButton("保存修改", ApplyChangeAndSave);
-
+                DrawGuiHelper.DrawButton("位置计算工具", OpenCalTs);
                 DrawGuiHelper.DrawButton("一键修正缩放", OneKeyResetScale);
                 DrawGuiHelper.DrawButton("一键修改使用图集", OneKeyChangeAtlas);
                 DrawGuiHelper.DrawButton("查Foreach", FindAllScripts);
@@ -95,6 +96,11 @@ public class RapidBuildEditorTool : EditorWindow
         });
 
 
+    }
+
+    private void OpenCalTs()
+    {
+        CalTsEditorTool.ShowWindow();
     }
 
 
